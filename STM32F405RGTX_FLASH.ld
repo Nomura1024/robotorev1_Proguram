@@ -70,7 +70,7 @@ SECTIONS
       . = . + LENGTH(FLASH_SECTOR6);
   } >FLASH_SECTOR6
  
-  /* 以下略 */
+  /* ????? */
 
   /* The program code and other data into "FLASH" Rom type memory */
   .text :

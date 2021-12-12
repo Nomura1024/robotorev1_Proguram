@@ -1,0 +1,4 @@
+initial.c:17:6:LED	16	static
+initial.c:63:6:error	8	static
+initial.c:69:6:stop	8	static
+initial.c:85:6:Motor	16	static
