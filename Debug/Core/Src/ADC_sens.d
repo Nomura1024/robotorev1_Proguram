@@ -1,4 +1,4 @@
-Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
+Core/Src/ADC_sens.o: ../Core/Src/ADC_sens.c ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
@@ -32,9 +32,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/ICM_20648.h ../Core/Inc/main.h ../Core/Inc/AQM0802.h \
- ../Core/Inc/flash.h ../Core/Inc/initial.h ../Core/Inc/tuning.h \
- ../Core/Inc/PID_con.h ../Core/Inc/ADC_sens.h ../Core/Inc/IMU_cale.h
+ ../Core/Inc/initial.h ../Core/Inc/main.h ../Core/Inc/ADC_sens.h \
+ ../Core/Inc/AQM0802.h ../Core/Inc/flash.h
 
 ../Core/Inc/main.h:
 
@@ -104,20 +103,12 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
 
-../Core/Inc/ICM_20648.h:
+../Core/Inc/initial.h:
 
 ../Core/Inc/main.h:
+
+../Core/Inc/ADC_sens.h:
 
 ../Core/Inc/AQM0802.h:
 
 ../Core/Inc/flash.h:
-
-../Core/Inc/initial.h:
-
-../Core/Inc/tuning.h:
-
-../Core/Inc/PID_con.h:
-
-../Core/Inc/ADC_sens.h:
-
-../Core/Inc/IMU_cale.h:

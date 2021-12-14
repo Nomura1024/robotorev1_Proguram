@@ -1,0 +1,3 @@
+ADC_sens.c:40:6:start	8	static
+ADC_sens.c:51:6:ADCinit	120	static
+ADC_sens.c:97:6:sensGet	16	static
