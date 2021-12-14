@@ -1833,6 +1833,7 @@ void sensGet(){
  8009246:	4b1a      	ldr	r3, [pc, #104]	; (80092b0 <sensGet+0x210>)
  8009248:	2200      	movs	r2, #0
  800924a:	701a      	strb	r2, [r3, #0]
+
 	if(er<1200 && k>=3) {
  800924c:	88fb      	ldrh	r3, [r7, #6]
  800924e:	f5b3 6f96 	cmp.w	r3, #1200	; 0x4b0
@@ -4112,7 +4113,7 @@ int log_Calcu(int c){
  800a3da:	697b      	ldr	r3, [r7, #20]
  800a3dc:	f083 4300 	eor.w	r3, r3, #2147483648	; 0x80000000
  800a3e0:	617b      	str	r3, [r7, #20]
-	if(h < 100) spee = 500;
+	if(h < 100) spee = 1200;
  800a3e2:	f04f 0200 	mov.w	r2, #0
  800a3e6:	4b33      	ldr	r3, [pc, #204]	; (800a4b4 <log_Calcu+0x154>)
  800a3e8:	e9d7 0104 	ldrd	r0, r1, [r7, #16]
@@ -4120,10 +4121,10 @@ int log_Calcu(int c){
  800a3f0:	4603      	mov	r3, r0
  800a3f2:	2b00      	cmp	r3, #0
  800a3f4:	d003      	beq.n	800a3fe <log_Calcu+0x9e>
- 800a3f6:	f44f 73fa 	mov.w	r3, #500	; 0x1f4
+ 800a3f6:	f44f 6396 	mov.w	r3, #1200	; 0x4b0
  800a3fa:	60fb      	str	r3, [r7, #12]
  800a3fc:	e044      	b.n	800a488 <log_Calcu+0x128>
-	else if(h < 300)  spee = 1100;
+	else if(h < 300)  spee = 1400;
  800a3fe:	a328      	add	r3, pc, #160	; (adr r3, 800a4a0 <log_Calcu+0x140>)
  800a400:	e9d3 2300 	ldrd	r2, r3, [r3]
  800a404:	e9d7 0104 	ldrd	r0, r1, [r7, #16]
@@ -4131,7 +4132,7 @@ int log_Calcu(int c){
  800a40c:	4603      	mov	r3, r0
  800a40e:	2b00      	cmp	r3, #0
  800a410:	d003      	beq.n	800a41a <log_Calcu+0xba>
- 800a412:	f240 434c 	movw	r3, #1100	; 0x44c
+ 800a412:	f44f 63af 	mov.w	r3, #1400	; 0x578
  800a416:	60fb      	str	r3, [r7, #12]
  800a418:	e036      	b.n	800a488 <log_Calcu+0x128>
 	else if(h < 500)  spee = 1300;
@@ -4167,7 +4168,7 @@ int log_Calcu(int c){
  800a466:	f44f 63c8 	mov.w	r3, #1600	; 0x640
  800a46a:	60fb      	str	r3, [r7, #12]
  800a46c:	e00c      	b.n	800a488 <log_Calcu+0x128>
-	else if(h < 1500) spee = 2000;
+	else if(h < 1500) spee = 3000;
  800a46e:	a30e      	add	r3, pc, #56	; (adr r3, 800a4a8 <log_Calcu+0x148>)
  800a470:	e9d3 2300 	ldrd	r2, r3, [r3]
  800a474:	e9d7 0104 	ldrd	r0, r1, [r7, #16]
@@ -4175,7 +4176,7 @@ int log_Calcu(int c){
  800a47c:	4603      	mov	r3, r0
  800a47e:	2b00      	cmp	r3, #0
  800a480:	d002      	beq.n	800a488 <log_Calcu+0x128>
- 800a482:	f44f 63fa 	mov.w	r3, #2000	; 0x7d0
+ 800a482:	f640 33b8 	movw	r3, #3000	; 0xbb8
  800a486:	60fb      	str	r3, [r7, #12]
 	return spee;
  800a488:	68fb      	ldr	r3, [r7, #12]
