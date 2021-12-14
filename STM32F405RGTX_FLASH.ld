@@ -64,11 +64,7 @@ SECTIONS
       . = . + LENGTH(FLASH_SECTOR1);
   } >FLASH_SECTOR1
   
-  .backup_flash2 :
-  {
-      _backup_flash_start2 = .;
-      . = . + LENGTH(FLASH_SECTOR6);
-  } >FLASH_SECTOR6
+  
  
   /* 以下略 */
 

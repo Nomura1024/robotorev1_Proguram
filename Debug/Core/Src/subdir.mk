@@ -6,6 +6,7 @@
 C_SRCS += \
 ../Core/Src/ADC_sens.c \
 ../Core/Src/AQM0802.c \
+../Core/Src/Flash_F405.c \
 ../Core/Src/ICM_20648.c \
 ../Core/Src/IMU_cale.c \
 ../Core/Src/PID_con.c \
@@ -22,6 +23,7 @@ C_SRCS += \
 C_DEPS += \
 ./Core/Src/ADC_sens.d \
 ./Core/Src/AQM0802.d \
+./Core/Src/Flash_F405.d \
 ./Core/Src/ICM_20648.d \
 ./Core/Src/IMU_cale.d \
 ./Core/Src/PID_con.d \
@@ -38,6 +40,7 @@ C_DEPS += \
 OBJS += \
 ./Core/Src/ADC_sens.o \
 ./Core/Src/AQM0802.o \
+./Core/Src/Flash_F405.o \
 ./Core/Src/ICM_20648.o \
 ./Core/Src/IMU_cale.o \
 ./Core/Src/PID_con.o \
@@ -57,6 +60,8 @@ Core/Src/ADC_sens.o: ../Core/Src/ADC_sens.c
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m4 -std=gnu11 -g3 -DSTM32F405xx -DUSE_HAL_DRIVER -DDEBUG -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/ADC_sens.d" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@"
 Core/Src/AQM0802.o: ../Core/Src/AQM0802.c
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m4 -std=gnu11 -g3 -DSTM32F405xx -DUSE_HAL_DRIVER -DDEBUG -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/AQM0802.d" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@"
+Core/Src/Flash_F405.o: ../Core/Src/Flash_F405.c
+	arm-none-eabi-gcc "$<" -mcpu=cortex-m4 -std=gnu11 -g3 -DSTM32F405xx -DUSE_HAL_DRIVER -DDEBUG -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/Flash_F405.d" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@"
 Core/Src/ICM_20648.o: ../Core/Src/ICM_20648.c
 	arm-none-eabi-gcc "$<" -mcpu=cortex-m4 -std=gnu11 -g3 -DSTM32F405xx -DUSE_HAL_DRIVER -DDEBUG -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/ICM_20648.d" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@"
 Core/Src/IMU_cale.o: ../Core/Src/IMU_cale.c

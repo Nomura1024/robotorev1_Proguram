@@ -34,6 +34,7 @@
 #include <PID_con.h>
 #include <ADC_sens.h>
 #include <IMU_cale.h>
+#include "Flash_F405.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -109,15 +110,16 @@ float ang_average =0;
 extern float ang;
 float load_log=0;
 float ahs;
-
-
+uint32_t callog_adress;
+uint32_t loadlog_adress;
+uint32_t plan_velo_adress=0;
 
 
   uint16_t work_ram[BACKUP_FLASH_SECTOR_SIZE] __attribute__ ((aligned(4)));
  char _backup_flash_start;
 
- float Driving_log[BACKUP_FLASH_SECTOR_SIZE2] __attribute__ ((aligned(4)));
- char _backup_flash_start2;
+// float Driving_log[BACKUP_FLASH_SECTOR_SIZE2] __attribute__ ((aligned(4)));
+// char _backup_flash_start2;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -188,6 +190,7 @@ void init()
 	TIM3 -> CNT = 32767;
 
 	Flash_load();
+
 	ang_average=(float)work_ram[31]/1000;
 	printf("%lf\r\n",ang_average);
 	if(ang_average>=50) ang_average=-ang_average/10;
@@ -210,17 +213,16 @@ void init()
 }
 
 int log_Calcu(int c){
-	int i=0;
 	double h=0;
 	int spee=1000;
 	//Driving_log[0] = 0;
-	h = Driving_log[6100]/(Driving_log[c]*0.01);
+	//h = Driving_log[6100+c]/(Driving_log[c]*0.01);
 	if(h<0)h=-h;
-	if(h < 100) spee = 1200;
+	if(h < 100) spee = 500;
 	else if(h < 300)  spee = 1400;
 	else if(h < 500)  spee = 1300;
-	else if(h < 800)  spee = 1500;
-	else if(h < 1000) spee = 1600;
+	else if(h < 800)  spee = 1600;
+	else if(h < 1000) spee = 2000;
 	else if(h < 1500) spee = 3000;
 	return spee;
 
@@ -238,12 +240,17 @@ void sidemaker(){
 	if(Speed < Speedbuff) Speed= Speed + 10;;
 
 }
-
+void driv_Log(float u){
+	  FLASH_Write_Word_F(callog_adress,u);
+	  FLASH_Write_Word_F(loadlog_adress,load_log);
+	  callog_adress+= 0x04;
+	  loadlog_adress+= 0x04;
+	 // u=*(float*)log_adress ;
+}
 void driv_log(){
 	static uint8_t i=0;
 	if(con==1 && floag==1 && second==0){
-			Driving_log[log_count] =ahs/a;
-			Driving_log[log_count+6100]= load_log;
+		 	driv_Log(ahs/a);
 			log_count++;
 			con=0;
 			a=0;
@@ -268,7 +275,8 @@ void driv_log(){
 		}
 }
 
-int angle_Control(){
+
+ int angle_Control(){
 	float kp=150,ki=30,kd=0.3;
 	float e,ed;
 	static float ei=0,e0;
@@ -284,6 +292,7 @@ int angle_Control(){
 int mode(){
 	int8_t i=1;
 	  int g;
+	 float lo=0;
 	while(1){
 		while(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_1)){
 			if(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_15)==0) i++;
@@ -325,13 +334,19 @@ int mode(){
 				LED(4);
 				lcd_clear();
 				HAL_Delay(500);
+
 				Speedbuff = Speed;
 				Speed =0;
 				stop_flag=0;
 				stoping=20;
+
+				FLASH_Erease7();
+				FLASH_Erease9();
+				callog_adress = start_adress_sector7;
+				loadlog_adress = start_adress_sector9;
 				HAL_TIM_Base_Start_IT(&htim6);
 				while(1){
-					if(stop_flag>=2){
+					if(stop_flag>=3){
 						stop();
 						con=0;
 						floag=0;
@@ -342,30 +357,30 @@ int mode(){
 				}
 				 work_ram[32]=log_count;
 				 Flash_store();
-				Flash_store2();
 				printf("%d\r\n",log_count);
-				for(g=0;g<=10;g++){
-					LED(7);
-					printf("%lf\r\n",Driving_log[g]);
-				}
 				log_count=0;
 				break;
 			case 5:
 				LED(5);
 				lcd_clear();
 				  Flash_load();
-				  Flash_load2();
+				  log_count=work_ram[32];
+
+				  plan_velo_adress=  start_adress_sector9;
+
 				  printf("%d\n\r", work_ram[33]);
+				  //acc_cal();
 				 // printf("%d\r\n", work_ram[32] );
 				  for(g=0;g<=work_ram[32];g++){
-					   printf("%lf,%lf\r\n", Driving_log[g],Driving_log[g+6100] );
+					  lo=*(float*)plan_velo_adress;
+					   printf("%lf\r\n", lo );
+					   plan_velo_adress+= 0x04;
 				  }
 				  printf("%d\r\n", work_ram[32] );
 				HAL_Delay(500);
 				break ;
 			case 6:
 				Flash_load();
-				Flash_load2();
 				HAL_Delay(500);
 				second=1;
 				log_count=0;
@@ -443,6 +458,7 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
   int g;
+
   init();
 
 
@@ -463,11 +479,11 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
+
   while(1){
 
 
-//	printf("%lf\n\r",calc_angle());
-//	HAL_Delay(1);
+
 
   }
 
