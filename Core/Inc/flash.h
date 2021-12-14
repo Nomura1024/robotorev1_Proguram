@@ -13,13 +13,13 @@
 #include "string.h"
 
 bool Flash_clear();
-bool Flash_clear2();
+
 
 uint16_t* Flash_load();
-float* Flash_load2();
+
 
 bool Flash_store();
-bool Flash_store2();
+
 
 
 

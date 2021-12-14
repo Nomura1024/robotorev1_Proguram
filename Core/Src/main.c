@@ -25,6 +25,7 @@
 #include "stdio.h"
 #include "stdbool.h"
 #include "string.h"
+#include "math.h"
 #include <ICM_20648.h>
 #include <AQM0802.h>
 
@@ -54,7 +55,8 @@
 #define diameter 22 //Tire diameter
 #define resolution 512 //
 #define Gear 2.14//Gear ratio
-
+#define Accm 3
+#define Decm 5
 #define BACKUP_FLASH_SECTOR_NUM     FLASH_SECTOR_1
 #define BACKUP_FLASH_SECTOR_SIZE    1024*16
 
@@ -112,8 +114,9 @@ float load_log=0;
 float ahs;
 uint32_t callog_adress;
 uint32_t loadlog_adress;
-uint32_t plan_velo_adress=0;
-
+uint32_t plan_velo_adress;
+uint32_t cros_adress;
+double secondsp[6100]={0};
 
   uint16_t work_ram[BACKUP_FLASH_SECTOR_SIZE] __attribute__ ((aligned(4)));
  char _backup_flash_start;
@@ -211,11 +214,8 @@ void init()
 	}
 	printf("\r\n");
 }
-
-int log_Calcu(int c){
-	double h=0;
+int log_Speed(double h){
 	int spee=1000;
-	//Driving_log[0] = 0;
 	//h = Driving_log[6100+c]/(Driving_log[c]*0.01);
 	if(h<0)h=-h;
 	if(h < 100) spee = 500;
@@ -226,6 +226,26 @@ int log_Calcu(int c){
 	else if(h < 1500) spee = 3000;
 	return spee;
 
+}
+void log_Cal(){
+	double C,L;
+	int i=0;
+	callog_adress = start_adress_sector7;
+	loadlog_adress = start_adress_sector9;
+	while(1){
+		L=*(float*)loadlog_adress;
+		C=*(float*)callog_adress;
+		if(isnan(C) != 0)break;
+
+		secondsp[i]= log_Speed(L/(C*0.01));
+		if((secondsp[i] - secondsp[i-1])/0.01>Accm)secondsp[i]=Accm*10+secondsp[i];
+		if((secondsp[i-1] - secondsp[i])/0.01>Accm)secondsp[i]=Decm*10+secondsp[i];
+		printf("%lf\n\r",secondsp[i]);
+		callog_adress+= 0x04;
+		loadlog_adress+= 0x04;
+		LED(2);
+		i++;
+	}
 }
 
 void sidemaker(){
@@ -258,20 +278,19 @@ void driv_log(){
 			LED(3);
 		}
 		if(con==1 && floag==1 && second==1){
-			if(cros==1){
-				log_count = work_ram[33+i];
-				i++;
-			}
-
-			Speed =log_Calcu(log_count);
+			Speed =secondsp[log_count];
 			Speedbuff = Speed;
 			log_count++;
 			con=0;
 			LED(1);
 		}
-		if(cros==1){
-			work_ram[33+i]=log_count;
-			i++;
+		if(cros==1 &&second==0){
+			FLASH_Write_Word_S(cros_adress,log_count);
+			cros_adress+= 0x04;
+		}
+		if(cros==1&&second==1){
+			log_count =  *(int*)cros_adress;
+			cros_adress += 0x04;
 		}
 }
 
@@ -342,11 +361,13 @@ int mode(){
 
 				FLASH_Erease7();
 				FLASH_Erease9();
+				FLASH_Erease10();
 				callog_adress = start_adress_sector7;
 				loadlog_adress = start_adress_sector9;
+				cros_adress = start_adress_sector10;
 				HAL_TIM_Base_Start_IT(&htim6);
 				while(1){
-					if(stop_flag>=3){
+					if(stop_flag>=2){
 						stop();
 						con=0;
 						floag=0;
@@ -355,29 +376,33 @@ int mode(){
 						break;
 					}
 				}
-				 work_ram[32]=log_count;
-				 Flash_store();
+				cros_adress=log_count;
 				printf("%d\r\n",log_count);
 				log_count=0;
 				break;
 			case 5:
 				LED(5);
 				lcd_clear();
-				  Flash_load();
-				  log_count=work_ram[32];
+				Flash_load();
+				log_Cal();
+				cros_adress = start_adress_sector10;
+				while(1){
+					log_count = *(int*) cros_adress;
+					if(isnan(*(float*) cros_adress) != 0)break;
 
-				  plan_velo_adress=  start_adress_sector9;
+				  printf("%d\n\r", log_count);
+				  cros_adress+=0x04;
+				}
+//				  //acc_cal();
+//				 // printf("%d\r\n", work_ram[32] );
+//				  for(g=0;g<=log_count;g++){
+//					//  printf("%lf\r\n",lo);
+//
+//				  lo=*(float*)callog_adress;
+//					   printf("%lf\r\n", lo );
+//					   callog_adress+= 0x04;
 
-				  printf("%d\n\r", work_ram[33]);
-				  //acc_cal();
-				 // printf("%d\r\n", work_ram[32] );
-				  for(g=0;g<=work_ram[32];g++){
-					  lo=*(float*)plan_velo_adress;
-					   printf("%lf\r\n", lo );
-					   plan_velo_adress+= 0x04;
-				  }
-				  printf("%d\r\n", work_ram[32] );
-				HAL_Delay(500);
+//				HAL_Delay(500);
 				break ;
 			case 6:
 				Flash_load();
@@ -388,6 +413,10 @@ int mode(){
 				Speed =0;
 				stop_flag=0;
 				stoping=20;
+
+				callog_adress = start_adress_sector7;
+				loadlog_adress = start_adress_sector9;
+				cros_adress = start_adress_sector10;
 				HAL_TIM_Base_Start_IT(&htim6);
 				while(1){
 					if(stop_flag>=2){
