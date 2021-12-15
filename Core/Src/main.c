@@ -55,7 +55,7 @@
 #define diameter 22 //Tire diameter
 #define resolution 512 //
 #define Gear 2.14//Gear ratio
-#define Accm 3
+#define Accm 5
 #define Decm 5
 #define BACKUP_FLASH_SECTOR_NUM     FLASH_SECTOR_1
 #define BACKUP_FLASH_SECTOR_SIZE    1024*16
@@ -88,7 +88,7 @@ uint16_t di[SENSOR_NUMBER];                  //Maximum and minimum difference
 uint16_t sens[SENSOR_NUMBER];
 uint16_t sensRatio[SENSOR_NUMBER];
 uint16_t b[SENSOR_NUMBER];
- uint16_t Speed = 1000;
+ uint16_t Speed = 1300;
 uint16_t Speedbuff;
  int count= 1200;
 float sensL, sensR;
@@ -99,7 +99,8 @@ uint8_t Pgain;
 uint8_t Igain;
 uint8_t Dgain;
 uint8_t con=0;
-uint16_t log_count=0;
+uint8_t secon=0;
+uint32_t log_count=0;
 uint8_t floag=0;
 uint8_t stop_flag=0;
 uint16_t stoping=10;
@@ -116,7 +117,13 @@ uint32_t callog_adress;
 uint32_t loadlog_adress;
 uint32_t plan_velo_adress;
 uint32_t cros_adress;
+
+uint32_t leftm=0;
+uint8_t left_floag=0;
+
+
 double secondsp[6100]={0};
+float loada[6100]={0};
 
   uint16_t work_ram[BACKUP_FLASH_SECTOR_SIZE] __attribute__ ((aligned(4)));
  char _backup_flash_start;
@@ -219,28 +226,30 @@ int log_Speed(double h){
 	//h = Driving_log[6100+c]/(Driving_log[c]*0.01);
 	if(h<0)h=-h;
 	if(h < 100) spee = 500;
-	else if(h < 300)  spee = 1400;
-	else if(h < 500)  spee = 1300;
+	else if(h < 300)  spee = 800;
+	else if(h < 500)  spee = 1500;
 	else if(h < 800)  spee = 1600;
-	else if(h < 1000) spee = 2000;
+	else if(h < 1000) spee = 3000;
 	else if(h < 1500) spee = 3000;
 	return spee;
 
 }
 void log_Cal(){
-	double C,L;
 	int i=0;
+	double Ca,Lo;
 	callog_adress = start_adress_sector7;
 	loadlog_adress = start_adress_sector9;
 	while(1){
-		L=*(float*)loadlog_adress;
-		C=*(float*)callog_adress;
-		if(isnan(C) != 0)break;
+		Lo=*(float*)loadlog_adress;
+		Ca=*(float*)callog_adress;
+		if(isnan(Ca) != 0)break;
 
-		secondsp[i]= log_Speed(L/(C*0.01));
-		if((secondsp[i] - secondsp[i-1])/0.01>Accm)secondsp[i]=Accm*10+secondsp[i];
-		if((secondsp[i-1] - secondsp[i])/0.01>Accm)secondsp[i]=Decm*10+secondsp[i];
-		printf("%lf\n\r",secondsp[i]);
+		secondsp[i]= log_Speed(Lo/(Ca*(Lo/Speed)));
+		loada[i] = loada[i-1]+Lo;
+		if((secondsp[i] - secondsp[i-1])/0.01>Accm)secondsp[i]=Accm*10+secondsp[i-1];
+		if((secondsp[i-1] - secondsp[i])/0.01>Decm)secondsp[i]=Decm*10+secondsp[i];
+		printf("%lf\n\r",loada[i]);
+
 		callog_adress+= 0x04;
 		loadlog_adress+= 0x04;
 		LED(2);
@@ -256,11 +265,13 @@ void sidemaker(){
 		stop_flag++;
 
 	}
+	if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_10) ==0)left_floag=1;
 
-	if(Speed < Speedbuff) Speed= Speed + 10;;
+	if(Speed < Speedbuff && stop_flag ==0) Speed= Speed + 10;;
 
 }
 void driv_Log(float u){
+
 	  FLASH_Write_Word_F(callog_adress,u);
 	  FLASH_Write_Word_F(loadlog_adress,load_log);
 	  callog_adress+= 0x04;
@@ -282,6 +293,7 @@ void driv_log(){
 			Speedbuff = Speed;
 			log_count++;
 			con=0;
+			i++;
 			LED(1);
 		}
 		if(cros==1 &&second==0){
@@ -289,7 +301,7 @@ void driv_log(){
 			cros_adress+= 0x04;
 		}
 		if(cros==1&&second==1){
-			log_count =  *(int*)cros_adress;
+			log_count =  *(uint32_t*)cros_adress;
 			cros_adress += 0x04;
 		}
 }
@@ -310,8 +322,9 @@ void driv_log(){
 }
 int mode(){
 	int8_t i=1;
-	  int g;
+	 int g;
 	 float lo=0;
+	 int z=0;
 	while(1){
 		while(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_1)){
 			if(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_15)==0) i++;
@@ -352,16 +365,13 @@ int mode(){
 			case 4:
 				LED(4);
 				lcd_clear();
-				HAL_Delay(500);
 
 				Speedbuff = Speed;
 				Speed =0;
 				stop_flag=0;
 				stoping=20;
 
-				FLASH_Erease7();
-				FLASH_Erease9();
-				FLASH_Erease10();
+				Flash_clear2();
 				callog_adress = start_adress_sector7;
 				loadlog_adress = start_adress_sector9;
 				cros_adress = start_adress_sector10;
@@ -375,8 +385,18 @@ int mode(){
 						stop_flag=0;
 						break;
 					}
+					if(left_floag==1 && cros==0 && (ahs>-1 && ahs<1)){
+						while(1){
+							if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_10) ==1){
+								left_floag=0;
+								leftm++;
+								break;
+							}
+						}
+					}
+
 				}
-				cros_adress=log_count;
+				Speed = Speedbuff;
 				printf("%d\r\n",log_count);
 				log_count=0;
 				break;
@@ -386,23 +406,20 @@ int mode(){
 				Flash_load();
 				log_Cal();
 				cros_adress = start_adress_sector10;
-				while(1){
-					log_count = *(int*) cros_adress;
-					if(isnan(*(float*) cros_adress) != 0)break;
-
-				  printf("%d\n\r", log_count);
-				  cros_adress+=0x04;
-				}
-//				  //acc_cal();
-//				 // printf("%d\r\n", work_ram[32] );
-//				  for(g=0;g<=log_count;g++){
-//					//  printf("%lf\r\n",lo);
+				printf("%d\r\n",leftm);
+//				while(1){
+//					log_count = *(int*) cros_adress;
+//					if(isnan(*(float*) cros_adress) != 0)break;
 //
-//				  lo=*(float*)callog_adress;
-//					   printf("%lf\r\n", lo );
-//					   callog_adress+= 0x04;
-
-//				HAL_Delay(500);
+//				 // printf("%d\n\r", log_count);
+//				  cros_adress+=0x04;
+//				}
+//				printf("-------\n\r");
+//				for( z=0;z<=3000;z++){
+//					printf("%d,%lf\n\r",z,lia[z]);
+//					if(lia[z]<=0)break;
+//				}
+//
 				break ;
 			case 6:
 				Flash_load();
@@ -417,6 +434,7 @@ int mode(){
 				callog_adress = start_adress_sector7;
 				loadlog_adress = start_adress_sector9;
 				cros_adress = start_adress_sector10;
+
 				HAL_TIM_Base_Start_IT(&htim6);
 				while(1){
 					if(stop_flag>=2){
@@ -427,6 +445,15 @@ int mode(){
 						stop_flag=0;
 						break;
 					}
+//					if(left_floag==1 && cros==0){
+//						while(1){
+//							if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_10) ==1){
+//								left_floag=0;
+//								leftm++;
+//								break;
+//							}
+//						}
+//					}
 				}
 				break;
 

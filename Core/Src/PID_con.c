@@ -21,11 +21,12 @@ extern uint8_t Igain;
 extern uint8_t Dgain;
 extern float ahs;
 extern uint8_t con;
+extern uint8_t secon;
 extern int L , R;
 extern float sensL, sensR;
 extern float speedval_I ;
 extern float load_log;
-
+extern float loada[6100];
 
 int MotorCtrl(){
 	static float sensvalBuf;
@@ -80,6 +81,7 @@ float speedget()
 	static float speedbuffg=0;
 	float speedget ;
 	float val ;
+	static int i =0;
 	L = TIM1 -> CNT;
 	R = TIM3 -> CNT;
 	R = R -32767;
@@ -89,10 +91,15 @@ float speedget()
 	speedget = (((32.2/2048)*val)/T);
 
 	speedbuffg += speedget*T;
-	if(speedbuffg>=10){
+
+	if(speedbuffg>=10 && secon==0){
 		con=1;
 		load_log = speedbuffg;
 		speedbuffg=0;
+	}
+	if(speedbuffg>= loada[i]&& secon==1){
+		con=1;
+
 	}
 	TIM1 -> CNT = 32767;
 	TIM3 -> CNT = 32767;

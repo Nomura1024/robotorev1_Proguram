@@ -11,6 +11,8 @@
 #include "stdio.h"
 #define BACKUP_FLASH_SECTOR_NUM     FLASH_SECTOR_1
 #define BACKUP_FLASH_SECTOR_SIZE    1024*16
+#define BACKUP_FLASH_SECTOR_NUM2     FLASH_SECTOR_6
+
 
 
 extern uint16_t work_ram[BACKUP_FLASH_SECTOR_SIZE] __attribute__ ((aligned(4)));
@@ -36,7 +38,27 @@ bool Flash_clear()
 
     return result == HAL_OK && error_sector == 0xFFFFFFFF;
 }
+bool Flash_clear2()
+{
+    HAL_FLASH_Unlock();
 
+    FLASH_EraseInitTypeDef EraseInitStruct;
+    EraseInitStruct.TypeErase = FLASH_TYPEERASE_SECTORS;
+    EraseInitStruct.Sector = BACKUP_FLASH_SECTOR_NUM2;
+    EraseInitStruct.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+    EraseInitStruct.NbSectors = 6;
+
+
+
+    // Eraseに失敗したsector番号がerror_sectorに入る
+    // 正常にEraseができたときは0xFFFFFFFFが入る
+    uint32_t error_sector;
+    HAL_StatusTypeDef result2 = HAL_FLASHEx_Erase(&EraseInitStruct, &error_sector);
+
+    HAL_FLASH_Lock();
+
+    return result2 == HAL_OK && error_sector == 0xFFFFFFFF;
+}
 
 uint16_t* Flash_load()
 {
