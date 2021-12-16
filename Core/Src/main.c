@@ -55,8 +55,8 @@
 #define diameter 22 //Tire diameter
 #define resolution 512 //
 #define Gear 2.14//Gear ratio
-#define Accm 4
-#define Decm 4
+#define Accm 6
+#define Decm 6
 #define BACKUP_FLASH_SECTOR_NUM     FLASH_SECTOR_1
 #define BACKUP_FLASH_SECTOR_SIZE    1024*16
 
@@ -88,7 +88,7 @@ uint16_t di[SENSOR_NUMBER];                  //Maximum and minimum difference
 uint16_t sens[SENSOR_NUMBER];
 uint16_t sensRatio[SENSOR_NUMBER];
 uint16_t b[SENSOR_NUMBER];
- uint16_t Speed = 1000;
+ uint16_t Speed = 1300;
 uint16_t Speedbuff;
  int count= 1200;
 float sensL, sensR;
@@ -223,38 +223,65 @@ void init()
 }
 int log_Speed(double h){
 	int spee=1000;
+
 	//h = Driving_log[6100+c]/(Driving_log[c]*0.01);
 	if(h<0)h=-h;
-	if(h < 100) spee = 500;
-	else if(h < 300)  spee = 1000;
-	else if(h < 500)  spee = 1200;
-	else if(h < 800)  spee = 1300;
-	else if(h < 1000) spee = 1800;
-	else if(h < 1500) spee = 2000;
+
+	if(h < 100) spee = 1200;
+	else if(h < 300)  spee = 1300;
+	else if(h < 500)  spee = 1500;
+	else if(h < 800)  spee = 1600;
+	else if(h < 1000) spee = 2000;
+	else if(h > 1500) spee = 2500;
 	return spee;
 
 }
+float mon_speed;
 void log_Cal(){
-	int i=0;
+	uint i=0;
 	double Ca,Lo;
 	callog_adress = start_adress_sector7;
 	loadlog_adress = start_adress_sector9;
 	while(1){
 		Lo=*(float*)loadlog_adress;
 		Ca=*(float*)callog_adress;
+
 		if(isnan(Ca) != 0)break;
 
-		//secondsp[i]= log_Speed(Lo/(Ca*(Lo/Speed)));
-		secondsp[i]= log_Speed(Lo/(Ca*(0.01)));
+		secondsp[i]= log_Speed(Lo/(Ca*(Lo/(double)Speed)));
+
 		loada[i] = loada[i-1]+Lo;
-		if((secondsp[i] - secondsp[i-1])/0.01>Accm)secondsp[i]=Accm*10+secondsp[i-1];
-		if((secondsp[i-1] - secondsp[i])/0.01>Decm)secondsp[i]=Decm*10+secondsp[i];
-		//printf("%lf\n\r",secondsp[i]);
+//		if((secondsp[i] - secondsp[i-1])/(Lo/(double)Speed)>Accm)secondsp[i]=Accm*Lo+secondsp[i-1];
+//		if(-(secondsp[i-1] - secondsp[i])/(Lo/(double)Speed)<Decm)secondsp[i]=Decm*Lo+secondsp[i];
+//		printf("%lf\n\r",secondsp[i]);
+
 
 		callog_adress+= 0x04;
 		loadlog_adress+= 0x04;
 		LED(2);
 		i++;
+	}
+	callog_adress = start_adress_sector7;
+	loadlog_adress = start_adress_sector9;
+	for(int s=0;s<i;s++){
+		Lo=*(float*)loadlog_adress;
+		Ca=*(float*)callog_adress;
+		if((secondsp[s] - secondsp[s-1])/(Lo/(double)Speed)>Accm)secondsp[s]=Accm*Lo+secondsp[s-1];
+
+		callog_adress+= 0x04;
+		loadlog_adress+= 0x04;
+	}
+	callog_adress = start_adress_sector7;
+	loadlog_adress = start_adress_sector9;
+	for(int s=i;s>0;s--){
+		if((secondsp[s] - secondsp[s+1])/(Lo/(double)Speed)>Decm)secondsp[s]=Decm*Lo+secondsp[s+1];
+		callog_adress+= 0x04;
+		loadlog_adress+= 0x04;
+	}
+	for(int s=0;s<i;s++){
+		mon_speed = (float)secondsp[s];
+		//printf("%lf\n\r",secondsp[s]);
+		HAL_Delay(1);
 	}
 }
 
@@ -290,7 +317,7 @@ void driv_log(){
 			LED(3);
 		}
 		if(con==1 && floag==1 && second==1){
-			if(secondsp[log_count]==0)secondsp[log_count]=Speedbuff;
+			if(secondsp[log_count]<1200)secondsp[log_count]=1200;
 			Speed =secondsp[log_count];
 
 			log_count++;
@@ -387,7 +414,7 @@ int mode(){
 						stop_flag=0;
 						break;
 					}
-					if(left_floag==1 && cros==0 && (ahs>-1 && ahs<1)){
+					if(left_floag==1 && (ahs>-1 && ahs<1)){
 						while(1){
 							if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_10) ==1){
 								left_floag=0;
@@ -409,19 +436,19 @@ int mode(){
 				log_Cal();
 				cros_adress = start_adress_sector10;
 				printf("%d\r\n",leftm);
-//				while(1){
-//					log_count = *(int*) cros_adress;
-//					if(isnan(*(float*) cros_adress) != 0)break;
-//
-//				 // printf("%d\n\r", log_count);
-//				  cros_adress+=0x04;
-//				}
+				while(1){
+					log_count = *(int*) cros_adress;
+					if(isnan(*(float*) cros_adress) != 0)break;
+
+				  printf("%d\n\r", log_count);
+				  cros_adress+=0x04;
+				}
 //				printf("-------\n\r");
 //				for( z=0;z<=3000;z++){
-//					printf("%d,%lf\n\r",z,lia[z]);
-//					if(lia[z]<=0)break;
+//					printf("%d,%lf\n\r",z,secondsp[i]);
+//					if(secondsp[z]<=0)break;
 //				}
-//
+
 				break ;
 			case 6:
 				Flash_load();
@@ -447,15 +474,15 @@ int mode(){
 						stop_flag=0;
 						break;
 					}
-//					if(left_floag==1 && cros==0){
-//						while(1){
-//							if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_10) ==1){
-//								left_floag=0;
-//								leftm++;
-//								break;
-//							}
-//						}
-//					}
+					if(left_floag==1  && (ahs>-1 && ahs<1)){
+						while(1){
+							if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_10) ==1){
+								left_floag=0;
+								leftm++;
+								break;
+							}
+						}
+					}
 				}
 				break;
 

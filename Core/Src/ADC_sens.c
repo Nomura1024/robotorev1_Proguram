@@ -121,7 +121,7 @@ void sensGet(){
 	if(er > 800 && j>=300 ) error();
 	cros=0;
 
-	if(er<1200 && k>=3) {
+	if(er<1200 && k>=1) {
 		cros=1;
 		k=0;
 	}

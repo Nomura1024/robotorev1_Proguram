@@ -13,7 +13,7 @@
 #include "string.h"
 
 bool Flash_clear();
-
+bool Flash_crear2();
 
 uint16_t* Flash_load();
 
