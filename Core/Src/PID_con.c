@@ -79,7 +79,7 @@ void SpeedCtrl(){
 float speedget()
 {
 	static float speedbuffg=0;
-	float speedget ;
+	static float speedget ;
 	float val ;
 	static int i =0;
 	L = TIM1 -> CNT;
@@ -95,10 +95,11 @@ float speedget()
 	if(speedbuffg>=10 && secon==0){
 		con=1;
 		load_log = speedbuffg;
-		speedbuffg=0;
+		speedbuffg=speedbuffg-10;
 	}
 	if(speedbuffg>= loada[i]&& secon==1){
 		con=1;
+		i++;
 
 	}
 	TIM1 -> CNT = 32767;

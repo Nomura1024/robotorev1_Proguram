@@ -55,8 +55,8 @@
 #define diameter 22 //Tire diameter
 #define resolution 512 //
 #define Gear 2.14//Gear ratio
-#define Accm 5
-#define Decm 5
+#define Accm 4
+#define Decm 4
 #define BACKUP_FLASH_SECTOR_NUM     FLASH_SECTOR_1
 #define BACKUP_FLASH_SECTOR_SIZE    1024*16
 
@@ -88,7 +88,7 @@ uint16_t di[SENSOR_NUMBER];                  //Maximum and minimum difference
 uint16_t sens[SENSOR_NUMBER];
 uint16_t sensRatio[SENSOR_NUMBER];
 uint16_t b[SENSOR_NUMBER];
- uint16_t Speed = 1300;
+ uint16_t Speed = 1000;
 uint16_t Speedbuff;
  int count= 1200;
 float sensL, sensR;
@@ -103,7 +103,7 @@ uint8_t secon=0;
 uint32_t log_count=0;
 uint8_t floag=0;
 uint8_t stop_flag=0;
-uint16_t stoping=10;
+uint16_t stoping=30;
 uint8_t second=0;
 uint8_t a=0;
 uint8_t cros=0;
@@ -226,11 +226,11 @@ int log_Speed(double h){
 	//h = Driving_log[6100+c]/(Driving_log[c]*0.01);
 	if(h<0)h=-h;
 	if(h < 100) spee = 500;
-	else if(h < 300)  spee = 800;
-	else if(h < 500)  spee = 1500;
-	else if(h < 800)  spee = 1600;
-	else if(h < 1000) spee = 3000;
-	else if(h < 1500) spee = 3000;
+	else if(h < 300)  spee = 1000;
+	else if(h < 500)  spee = 1200;
+	else if(h < 800)  spee = 1300;
+	else if(h < 1000) spee = 1800;
+	else if(h < 1500) spee = 2000;
 	return spee;
 
 }
@@ -244,11 +244,12 @@ void log_Cal(){
 		Ca=*(float*)callog_adress;
 		if(isnan(Ca) != 0)break;
 
-		secondsp[i]= log_Speed(Lo/(Ca*(Lo/Speed)));
+		//secondsp[i]= log_Speed(Lo/(Ca*(Lo/Speed)));
+		secondsp[i]= log_Speed(Lo/(Ca*(0.01)));
 		loada[i] = loada[i-1]+Lo;
 		if((secondsp[i] - secondsp[i-1])/0.01>Accm)secondsp[i]=Accm*10+secondsp[i-1];
 		if((secondsp[i-1] - secondsp[i])/0.01>Decm)secondsp[i]=Decm*10+secondsp[i];
-		printf("%lf\n\r",loada[i]);
+		//printf("%lf\n\r",secondsp[i]);
 
 		callog_adress+= 0x04;
 		loadlog_adress+= 0x04;
@@ -259,7 +260,7 @@ void log_Cal(){
 
 void sidemaker(){
 	//static int h= 0;
-	if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_2) ==0 && count > 700 && stoping > 30){
+	if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_2) ==0 && count > 100 && stoping > 30){
 		floag=1;
 		stoping =0;
 		stop_flag++;
@@ -289,8 +290,9 @@ void driv_log(){
 			LED(3);
 		}
 		if(con==1 && floag==1 && second==1){
+			if(secondsp[log_count]==0)secondsp[log_count]=Speedbuff;
 			Speed =secondsp[log_count];
-			Speedbuff = Speed;
+
 			log_count++;
 			con=0;
 			i++;
@@ -369,7 +371,7 @@ int mode(){
 				Speedbuff = Speed;
 				Speed =0;
 				stop_flag=0;
-				stoping=20;
+				stoping=30;
 
 				Flash_clear2();
 				callog_adress = start_adress_sector7;
