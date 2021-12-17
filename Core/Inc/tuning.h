@@ -9,7 +9,7 @@
 #define INC_TUNING_H_
 
 void tuning();
-
+void acc_Speed();
 
 
 #endif /* INC_TUNING_H_ */

@@ -56,7 +56,7 @@
 #define resolution 512 //
 #define Gear 2.14//Gear ratio
 #define Accm 6
-#define Decm 6
+#define Decm 4
 #define BACKUP_FLASH_SECTOR_NUM     FLASH_SECTOR_1
 #define BACKUP_FLASH_SECTOR_SIZE    1024*16
 
@@ -124,7 +124,7 @@ uint8_t left_floag=0;
 
 double secondsp[6100]={0};
 float loada[6100]={0};
-
+int ri[12]={0};
   uint16_t work_ram[BACKUP_FLASH_SECTOR_SIZE] __attribute__ ((aligned(4)));
  char _backup_flash_start;
 
@@ -222,17 +222,23 @@ void init()
 	printf("\r\n");
 }
 int log_Speed(double h){
-	int spee=1000;
+	int spee=1300;
 
 	//h = Driving_log[6100+c]/(Driving_log[c]*0.01);
 	if(h<0)h=-h;
 
-	if(h < 100) spee = 1200;
-	else if(h < 300)  spee = 1300;
-	else if(h < 500)  spee = 1500;
-	else if(h < 800)  spee = 1600;
-	else if(h < 1000) spee = 2000;
-	else if(h > 1500) spee = 2500;
+	if(h < 100) spee = work_ram[37];
+	else if(h < 300)  spee = work_ram[36];
+	else if(h < 500)  spee = work_ram[35];
+	else if(h < 800)  spee = work_ram[34];
+	else if(h < 1000) spee = work_ram[33];
+	else  spee = work_ram[32];
+//	if(h < 100) spee = 1200;
+//		else if(h < 300)  spee = 1300;
+//		else if(h < 500)  spee = 1500;
+//		else if(h < 800)  spee = 1600;
+//		else if(h < 1000) spee = 2000;
+//		else if(h > 1500) spee = 2500;
 	return spee;
 
 }
@@ -281,7 +287,7 @@ void log_Cal(){
 	for(int s=0;s<i;s++){
 		mon_speed = (float)secondsp[s];
 		//printf("%lf\n\r",secondsp[s]);
-		HAL_Delay(1);
+		//HAL_Delay(10);
 	}
 }
 
@@ -307,7 +313,8 @@ void driv_Log(float u){
 	 // u=*(float*)log_adress ;
 }
 void driv_log(){
-	static uint8_t i=0;
+	static uint8_t i=0,z=0;
+	static uint crosbuff=0;
 	if(con==1 && floag==1 && second==0){
 		 	driv_Log(ahs/a);
 			log_count++;
@@ -317,21 +324,29 @@ void driv_log(){
 			LED(3);
 		}
 		if(con==1 && floag==1 && second==1){
-			if(secondsp[log_count]<1200)secondsp[log_count]=1200;
+			if(secondsp[log_count]<1300)secondsp[log_count]=1300;
 			Speed =secondsp[log_count];
-
-			log_count++;
 			con=0;
+			log_count++;
 			i++;
 			LED(1);
 		}
-		if(cros==1 &&second==0){
+		if(cros==1 &&second==0 && crosbuff!= log_count && crosbuff+3 <= log_count){
 			FLASH_Write_Word_S(cros_adress,log_count);
 			cros_adress+= 0x04;
+			crosbuff=log_count;
+			cros=0;
+
 		}
-		if(cros==1&&second==1){
+		if(cros==1 &&second==1 && crosbuff != log_count && crosbuff+3 <= log_count){
+			ri[z] = log_count;
 			log_count =  *(uint32_t*)cros_adress;
+
+			crosbuff=log_count;
 			cros_adress += 0x04;
+			cros=0;
+			z++;
+
 		}
 }
 
@@ -349,146 +364,151 @@ void driv_log(){
 	angMotorL=(e*kp+ei*ki-ed*kd);
 	return angMotorL;
 }
-int mode(){
-	int8_t i=1;
-	 int g;
-	 float lo=0;
-	 int z=0;
-	while(1){
-		while(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_1)){
-			if(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_15)==0) i++;
-			HAL_Delay(100);
-			if(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_2)==0) i--;
-			LED(i);
-			if(i==8) i=1;
-			if(i==-1) i=7;
-			HAL_Delay(100);
+ int mode(){
+ 	int8_t i=1;
+ 	 int g;
+ 	 float lo=0;
+ 	 int z=0;
+ 	while(1){
+ 		while(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_1)){
+ 			if(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_15)==0) i++;
+ 			HAL_Delay(100);
+ 			if(HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_2)==0) i--;
+ 			LED(i);
+ 			if(i==8) i=1;
+ 			if(i==-1) i=7;
+ 			HAL_Delay(100);
 
-		}
-		HAL_Delay(1000);
-		switch(i){
-			case 1:
-				LED(1);
-				lcd_clear();
-				lcd_locate(0,0);
-				lcd_printf("IMU");
-				IMU_init();
-				off_angle();
-				break;
-			case 2:
-				LED(2);
-				lcd_clear();
-				lcd_locate(0,0);
-				lcd_printf("ADCinit");
-				ADCinit();
-				break;
-			case 3:
-				LED(3);
-				Speedbuff = Speed;
-				lcd_clear();
-				lcd_locate(0,0);
-				lcd_printf("Tuning");
-				tuning();
-				Speed = Speedbuff;
-				break;
-			case 4:
-				LED(4);
-				lcd_clear();
+ 		}
+ 		HAL_Delay(1000);
+ 		switch(i){
+ 			case 1:
+ 				LED(1);
+ 				lcd_clear();
+ 				lcd_locate(0,0);
+ 				lcd_printf("IMU");
+ 				IMU_init();
+ 				off_angle();
+ 				break;
+ 			case 2:
+ 				LED(2);
+ 				lcd_clear();
+ 				lcd_locate(0,0);
+ 				lcd_printf("ADCinit");
+ 				ADCinit();
+ 				break;
+ 			case 3:
+ 				LED(3);
+ 				Speedbuff = Speed;
+ 				lcd_clear();
+ 				lcd_locate(0,0);
+ 				lcd_printf("Tuning");
+ 				tuning();
+ 				Speed = Speedbuff;
+ 				break;
+ 			case 4:
+ 				LED(4);
+ 				lcd_clear();
 
-				Speedbuff = Speed;
-				Speed =0;
-				stop_flag=0;
-				stoping=30;
+ 				Speedbuff = Speed;
+ 				Speed =0;
+ 				stop_flag=0;
+ 				stoping=30;
+ 				second=0;
+ 				Flash_clear2();
+ 				callog_adress = start_adress_sector7;
+ 				loadlog_adress = start_adress_sector9;
+ 				cros_adress = start_adress_sector10;
+ 				HAL_TIM_Base_Start_IT(&htim6);
+ 				while(1){
+ 					if(stop_flag>=2){
+ 						stop();
+ 						con=0;
+ 						floag=0;
+ 						stoping =0;
+ 						stop_flag=0;
+ 						break;
+ 					}
+ 					if(left_floag==1 && (ahs>-1 && ahs<1)){
+ 						while(1){
+ 							if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_10) ==1){
+ 								left_floag=0;
+ 								leftm++;
+ 								break;
+ 							}
+ 						}
+ 					}
 
-				Flash_clear2();
-				callog_adress = start_adress_sector7;
-				loadlog_adress = start_adress_sector9;
-				cros_adress = start_adress_sector10;
-				HAL_TIM_Base_Start_IT(&htim6);
-				while(1){
-					if(stop_flag>=2){
-						stop();
-						con=0;
-						floag=0;
-						stoping =0;
-						stop_flag=0;
-						break;
-					}
-					if(left_floag==1 && (ahs>-1 && ahs<1)){
-						while(1){
-							if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_10) ==1){
-								left_floag=0;
-								leftm++;
-								break;
-							}
-						}
-					}
+ 				}
+ 				Speed = Speedbuff;
+ 				printf("%d\r\n",log_count);
+ 				log_count=0;
+ 				break;
+ 			case 5:
+ 				LED(5);
+ 				lcd_clear();
+ 				Flash_load();
+ 				log_Cal();
+ 				cros_adress = start_adress_sector10;
+ 				while(1){
+ 					log_count = *(int*) cros_adress;
+ 					if(isnan(*(float*) cros_adress) != 0)break;
 
-				}
-				Speed = Speedbuff;
-				printf("%d\r\n",log_count);
-				log_count=0;
-				break;
-			case 5:
-				LED(5);
-				lcd_clear();
-				Flash_load();
-				log_Cal();
-				cros_adress = start_adress_sector10;
-				printf("%d\r\n",leftm);
-				while(1){
-					log_count = *(int*) cros_adress;
-					if(isnan(*(float*) cros_adress) != 0)break;
+ 				  printf("%d\n\r", log_count);
+ 				  cros_adress+=0x04;
+ 				}
+ 				for( z=0;z<=12;z++){
+ 					printf("%d\n\r",ri[z]);
+ 				}
+ //				printf("-------\n\r");
+ //				for( z=0;z<=3000;z++){
+ //					printf("%d,%lf\n\r",z,secondsp[i]);
+ //					if(secondsp[z]<=0)break;
+ //				}
 
-				  printf("%d\n\r", log_count);
-				  cros_adress+=0x04;
-				}
-//				printf("-------\n\r");
-//				for( z=0;z<=3000;z++){
-//					printf("%d,%lf\n\r",z,secondsp[i]);
-//					if(secondsp[z]<=0)break;
-//				}
+ 				break ;
+ 			case 6:
+ 				Flash_load();
+ 				HAL_Delay(500);
+ 				second=1;
+ 				log_count=0;
+ 				Speedbuff = Speed;
+ 				Speed =0;
+ 				stop_flag=0;
+ 				stoping=20;
 
-				break ;
-			case 6:
-				Flash_load();
-				HAL_Delay(500);
-				second=1;
-				log_count=0;
-				Speedbuff = Speed;
-				Speed =0;
-				stop_flag=0;
-				stoping=20;
+ 				callog_adress = start_adress_sector7;
+ 				loadlog_adress = start_adress_sector9;
+ 				cros_adress = start_adress_sector10;
 
-				callog_adress = start_adress_sector7;
-				loadlog_adress = start_adress_sector9;
-				cros_adress = start_adress_sector10;
+ 				HAL_TIM_Base_Start_IT(&htim6);
+ 				while(1){
+ 					if(stop_flag>=2){
+ 						stop();
+ 						con=0;
+ 						floag=0;
+ 						stoping =0;
+ 						stop_flag=0;
+ 						break;
+ 					}
+ 					if(left_floag==1  && (ahs>-1 && ahs<1)){
+ 						while(1){
+ 							if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_10) ==1){
+ 								left_floag=0;
+ 								leftm++;
+ 								break;
+ 							}
+ 						}
+ 					}
+ 				}
+ 				break;
+ 			case 7:
+ 				acc_Speed();
+ 				break;
 
-				HAL_TIM_Base_Start_IT(&htim6);
-				while(1){
-					if(stop_flag>=2){
-						stop();
-						con=0;
-						floag=0;
-						stoping =0;
-						stop_flag=0;
-						break;
-					}
-					if(left_floag==1  && (ahs>-1 && ahs<1)){
-						while(1){
-							if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_10) ==1){
-								left_floag=0;
-								leftm++;
-								break;
-							}
-						}
-					}
-				}
-				break;
-
-		}
-	}
-}
+ 		}
+ 	}
+ }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	count++;
 	stoping++;
@@ -515,7 +535,20 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+
+
+
+
+
+
+
+
+
+
+
+
+
+	HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -542,7 +575,7 @@ int main(void)
   MX_TIM6_Init();
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
-  int g;
+
 
   init();
 

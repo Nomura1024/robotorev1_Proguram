@@ -119,12 +119,13 @@ void sensGet(){
 			er = sensR+sensL;
 	if(er > 800) j++;
 	if(er > 800 && j>=300 ) error();
-	cros=0;
 
-	if(er<1200 && k>=1) {
+
+	if(er<1200 && k>=0) {
 		cros=1;
 		k=0;
-	}
+	}else cros=0;
+
 	if(er > 1200)k++;
 
 }

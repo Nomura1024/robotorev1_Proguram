@@ -69,10 +69,9 @@ void error(){
 void stop(){
 	static int i=0;
 //	i++;
-//	if (i>100 ){
-
-		HAL_TIM_Base_Stop_IT(&htim6);
-		Motor(-1000,-1000);
+//	if (i>50000 ){
+//		Speed=0;
+	HAL_TIM_Base_Stop_IT(&htim6);
 		Motor(0,0);
 //	}
 

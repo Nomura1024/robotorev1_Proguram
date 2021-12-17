@@ -54,7 +54,7 @@ void SpeedCtrl(){
 	int16_t MotorL=0,MotorR=0,sensmotor=0;
 	float speedval;
 	//static float speedval_I ;
-	float sKp = 1.6;//1.8
+	float sKp = 1.5;//1.8
 	float sKi= 10;//10
 
 
